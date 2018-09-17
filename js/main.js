@@ -5,6 +5,18 @@ var newMap
 var markers = []
 
 /**
+ * Registering the service worker
+ */
+
+if(navigator.serviceWorker) {
+  navigator.serviceWorker.register('/sw.js').then(function(){
+      console.log("service worker is registered");
+  }).catch(function(){
+    console.log("service worker registration has failed");
+  });
+}
+
+/**
  * Fetch neighborhoods and cuisines as soon as the page is loaded.
  */
 document.addEventListener('DOMContentLoaded', (event) => {
@@ -78,7 +90,7 @@ initMap = () => {
         scrollWheelZoom: false
       });
   L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.jpg70?access_token={mapboxToken}', {
-    mapboxToken: '<your MAPBOX API KEY HERE>',
+    mapboxToken: 'pk.eyJ1IjoiZGFwaG5lZWRsZSIsImEiOiJjamwxNWh3ZTUxYzV5M3BxeDhmc2QxanhyIn0.LeIbyH9pyYTPxpSHV4chWA',
     maxZoom: 18,
     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
       '<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
@@ -153,6 +165,20 @@ fillRestaurantsHTML = (restaurants = self.restaurants) => {
 }
 
 /**
+ * Assign a tab index of -1 to each marker
+ */
+
+const allMarkers = document.querySelectorAll('.leaflet-marker-icon');
+
+allMarkers.forEach(function(marker){
+  marker.tabIndex = -1;
+})
+
+/*markers.forEach(function(marker){
+  marker.setAttribute('tabindex', -1);
+})*/
+
+/**
  * Create restaurant HTML.
  */
 createRestaurantHTML = (restaurant) => {
@@ -161,9 +187,10 @@ createRestaurantHTML = (restaurant) => {
   const image = document.createElement('img');
   image.className = 'restaurant-img';
   image.src = DBHelper.imageUrlForRestaurant(restaurant);
+  image.alt = `photograph of ${restaurant.name}`;  // adding alt attribute to images
   li.append(image);
 
-  const name = document.createElement('h1');
+  const name = document.createElement('h2');
   name.innerHTML = restaurant.name;
   li.append(name);
 
@@ -175,9 +202,14 @@ createRestaurantHTML = (restaurant) => {
   address.innerHTML = restaurant.address;
   li.append(address);
 
-  const more = document.createElement('a');
+  const more = document.createElement('button');  // changing anchor element to button
   more.innerHTML = 'View Details';
-  more.href = DBHelper.urlForRestaurant(restaurant);
+  more.setAttribute('role','link'); // adding aria role of link to the buttons
+  more.addEventListener('click', function(){
+    document.location.href = DBHelper.urlForRestaurant(restaurant);
+  });
+
+/*  more.href = DBHelper.urlForRestaurant(restaurant);*/
   li.append(more)
 
   return li
@@ -189,7 +221,7 @@ createRestaurantHTML = (restaurant) => {
 addMarkersToMap = (restaurants = self.restaurants) => {
   restaurants.forEach(restaurant => {
     // Add marker to the map
-    const marker = DBHelper.mapMarkerForRestaurant(restaurant, self.newMap);
+    const marker = DBHelper.mapMarkerForRestaurant(restaurant, self.newMap);    
     marker.on("click", onClick);
     function onClick() {
       window.location.href = marker.options.url;
